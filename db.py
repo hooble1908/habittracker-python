@@ -29,10 +29,11 @@ def create_tables(db):
     """
     creates two tables  - habits (contains habits, their descriptions and period of validity for streak),
                         - checks (name of habit, period and checkdates and number of current streak)
+    if they already exist than nothing happens
     Parameters:
         db - database in which the tables will be created
     Returns:
-        no return
+        print if it was successful or not
     """
     try:
         cur = db.cursor()
@@ -94,14 +95,15 @@ def add_check(db, name, period, checkdate=None, streak=1):
 
 
 
-def get_check_data(db, name=None):
+def get_all_checkdata_single(db, name=None):
     """
     get all entries from table checks with selected habitname
+    if no habitname is given user can choose which he wants to see
     Parameter:
         db - database where table "checks" is
         name - name of habit
     Returns:
-        all entries from the selected habit name
+        all check entries from the selected habit name
     """
     cur = db.cursor()
     if not name:
@@ -114,7 +116,7 @@ def get_check_data(db, name=None):
     
     return cur 
         
-def get_period_check_data(db, period):
+def get_all_checkdata_period(db, period=None):
     """
     get all checkdata for all habits with selected period "daily" or "weekly"
     Parameter:
@@ -123,6 +125,8 @@ def get_period_check_data(db, period):
     Returns:
         all checkentries for habits of selected period row by row
     """
+    if not period:
+        period = input("checkdata for which period? daily or weekly?: ")
     cur = db.cursor()
     cur.execute("SELECT habit, period, checkdate FROM checks WHERE period=?", (period,))
     print("habit -- period -- checkdate")    
@@ -130,19 +134,22 @@ def get_period_check_data(db, period):
         print(row)        
 
      
-def get_last_checkdate(db, name):
+def get_last_checkdate(db, name=None):
      """
-     get last checkdate from table checks for selected habit
+     get last checkdate from table checks for selected habit, if non given than user can entry
      Parameter:
          db - database where table "checks" is
          name - name of habit
      Returns:
-         last checkdate for selected habit
+         last_checkdate for selected habit for further functions         
+         print with name of habit and last checkdate
      """
+     if not name:
+         name = input("for which habit you want to see last checkdate?: ")
+     
      try:
          cur = db.cursor()
          last_checkdate = cur.execute("SELECT MAX(checkdate) FROM checks WHERE habit=?", (name,))
-         print("Last checkdate for Habit " + name + " was: ")
          last_checkdate = cur.fetchone()
          return last_checkdate
      
@@ -157,7 +164,7 @@ def get_last_streak(db, name):
         db - database where table "checks" is
         name - name of habit
     Returns:
-        last streakvalue for selected habit
+        last_streak: value for further functions
     """
     try:
         cur = db.cursor()
@@ -169,16 +176,73 @@ def get_last_streak(db, name):
         print("Something went wrong with checkdata from: " + name, e)
 
 
-def get_longest_streak(db, name):
+def get_longest_streak_habit(db, name=None):
+    """
+    get longest streakvalue from db for chosen habit, if no habitname given than user can entry
+    Parameters
+        db - database where table "checks" is
+        name : name of habit
+    Returns
+    print with name and longest streak value
+    longest_streak: value for further functions
+    """
+    if not name:
+        name = input("For which habit you want to see the longest streak?: ")
+        
     try:
         cur = db.cursor()
-        longest_streak = cur.execute("SELECT streak FROM checks WHERE habit=? ORDER BY streak DESC LIMIT 1", (name,))
+        longest_streak = cur.execute("SELECT habit, streak FROM checks WHERE habit=? ORDER BY streak DESC LIMIT 1", (name,))
         longest_streak = cur.fetchone()
-        print("Longest streak from habit: " + name + " is: ", longest_streak)
+        print("Longest streak from habit " + name + " is: ", longest_streak)
         return longest_streak
     
     except Exception as e:
         print("Something went wrong with checkdata from: " + name, e)
+
+
+def get_longest_streak_period(db, period=None):
+    """
+    get longest streakvalue from db for chosen period, if no periodname given than user can entry
+    Parameters
+        db - database where table "checks" is
+        period : period of habits
+    Returns
+    print with name and longest streak value for given period
+    longest_streak: value for further functions
+    """
+    if not period:
+        period = input("For which period you want to see the longest streaks?: ")
+        
+    try:
+        cur = db.cursor()
+        longest_streak = cur.execute("SELECT habit, streak FROM checks WHERE period=? ORDER BY streak DESC LIMIT 1", (period,))
+        longest_streak = cur.fetchone()
+        print("Longest streak from period " +period + " is: ", longest_streak)
+        return longest_streak
+    
+    except Exception as e:
+        print("Something went wrong with checkdata from: " + period, e)
+
+
+def get_longest_streak_from_all(db):
+    """
+    get longest streakvalue from all habits from db
+    Parameters
+        db - database where table "checks" is
+    Returns
+    print with name and longest streak value from all habits
+    longest_streak: value for further functions
+    """        
+    try:
+        cur = db.cursor()
+        longest_streak = cur.execute("SELECT habit, streak FROM checks ORDER BY streak DESC LIMIT 1")
+        longest_streak = cur.fetchone()
+        print("Longest streak from all habits is: ", longest_streak)
+        return longest_streak
+    
+    except Exception as e:
+        print("Something went wrong with checkdata from: ", e)
+
 
 
 def get_last_checkdate_all(db):
@@ -187,16 +251,36 @@ def get_last_checkdate_all(db):
      Parameter:
          db - database where table "checks" is
      Returns:
-         pandas dataframe with habit, checkID, period and last checkdate
+         pandas dataframe with habit, period, last checkdate, last streak
      """
      try:
          cur = db.cursor()
-         cur.execute("SELECT DISTINCT habit, period, checkdate FROM checks")
-         df = pd.DataFrame(cur.fetchall(), columns = ['habit', 'period', 'last checkdate'])
-         print(df.groupby(["period", "habit"]).max())
+         cur.execute("SELECT DISTINCT habit, period, checkdate, streak FROM checks")
+         df = pd.DataFrame(cur.fetchall(), columns = ['habit', 'period', 'last checkdate', 'last streak'])
+         print(df.groupby(["period","habit",]).max())
      
      except Exception as e:
          print("Something went wrong with getting checkdata: ", e)    
+
+
+def get_last_checkdate_period(db, period=None):
+     """
+     get last checkdate from every habit from table , with pandas dataframe
+     Parameter:
+         db - database where table "checks" is
+     Returns:
+         pandas dataframe with habit, checkID, period and last checkdate
+     """
+     if not period:
+         period = input("for which period you want to get last checkdates?: ")
+     try:
+         cur = db.cursor()
+         cur.execute("SELECT DISTINCT habit, period, checkdate FROM checks WHERE period=?", (period,))
+         df = pd.DataFrame(cur.fetchall(), columns = ['habit', 'period', 'last checkdate',])
+         print(df.groupby(["period","habit",]).max())
+     
+     except Exception as e:
+         print("Something went wrong with getting checkdata: ", e) 
 
 
 def overview_all_habits(db):
@@ -290,7 +374,7 @@ def check_habit(db, name, checkdate=None):
             checkdate = date.today()
         period = cur.execute("""SELECT DISTINCT period FROM habits WHERE name=?""", (name,))
         period = str(cur.fetchone())
-        period = period[2:-3]
+        period = period[2:-3]    
         streak = streak_ongoing(db, name, period)
         cur.execute("""INSERT INTO checks (habit, period, checkdate, streak) VALUES (?,?,?, ?) """, (name, period, checkdate, streak))
         db.commit()
@@ -306,20 +390,20 @@ def streak_ongoing(db, name, period):
     Parameters:
         db - name database checkinformation is stored
         name - name of habit that is checked if streak is still actice
-    Returns
-    if the difference of last checkdate and todays check is within period than value "True" is added to checkentry, if not "False"
-    value used to calculate length of streak
+    Returns:
+    if the difference of last checkdate and todays check is within period than +1 to current streak value is added to checkentry, 
+    if not within streakperiod than value for streak is 1
     """
     try:
         try:
             last_checkdate = str(get_last_checkdate(db, name))
             last_checkdate = last_checkdate[2:-3]
-            print(last_checkdate)
+            print("Last Checkdate for habit " + name + " was: ",last_checkdate)
             last_checkdate = datetime.strptime(last_checkdate, '%Y-%m-%d')
             now = datetime.now()
             now.replace(minute=0, hour=0, second=0, microsecond=0)
-            print("Today is: ")
-            print(now.date())
+            print("Today is: ", now.date())
+            #print(now.date())
             difference_check = now - last_checkdate
             last_streak = get_last_streak(db, name)
             last_streak = str(last_streak)
@@ -378,10 +462,11 @@ def streak_ongoing(db, name, period):
         print("Streakvalue 1 by default. Please check data in db." + e)
     
     finally:
+        print("-----------------------")
         return streak
 
 
-def streak_actual(db, name=None):
+def streakdata_single(db, name=None):
     """
     Parameters:
         db - database where table checks is
@@ -401,18 +486,39 @@ def streak_actual(db, name=None):
 
 def count_checks_total(db):
     """
+    total number of checks per habit without duplicates
+    -----------------------------
     Parameters:
         db - database where table checks is 
     Returns:
-        pandas dataframe with total number of checks per habit without duplicates
+        pandas dataframe with total number of checks per habit without duplicates; duplicate=two checks with same date
     """
     cur = db.cursor()
     cur.execute("SELECT habit, period, checkdate, streak FROM checks")
     df = pd.DataFrame(cur.fetchall(), columns = ["habit", "period", "last checkdate", "streak"])
     df = df.drop_duplicates()
     df = df["habit"].value_counts()
-    print("Total checks per habit: ")
+    print("Total checks per habit (without duplicates): ")
     print(df)
+
+
+def actual_streak_today_single(db, name=None):
+    """
+    calculates actual streakvalue from today, if there is no checkentry for current day in table
+    -----------------------------
+    Parameters:
+        db - database where table checks is 
+        name - name of habit, in not given than user can entry
+    Returns:
+        variable with actual streakvalue if there would be a checkentry for today
+    """
+    cur = db.cursor()    
+    if not name:
+        name = input("for which habit you want to see the actual streak from view TODAY?: ")
+    period = cur.execute("""SELECT DISTINCT period FROM habits WHERE name=?""", (name,))
+    period = str(cur.fetchone())
+    period = period[2:-3]
+    streak_ongoing(db, name, period)
 
 def fuelle_test_db():    
     db = get_db("test.db")
@@ -451,7 +557,7 @@ def fuelle_test_db():
 
 db = get_db("test.db")
 #create_tables(db)
-fuelle_test_db()
+#fuelle_test_db()
 #overview_all_habits(db)
 #add_habit(db, "swimming", "1x a week", "weekly", "2022-10-11")
 #add_check(db, "swimming", "weekly", "2022-11-17", "True")
@@ -459,8 +565,15 @@ fuelle_test_db()
 #check_habit(db, "swimming")
 #db.commit()
 #get_check_data(db, "stairs")
-#get_period_check_data(db, "weekly")
+#get_all_checkdata_period(db)
 #get_last_checkdate_all(db)
-#streak_actual(db)
+#streakdata_single(db)
 #get_last_streak(db, "swimming")
-streak_ongoing(db, "stairs", "daily")
+#streak_ongoing(db, "stairs", "daily")
+#get_longest_streak_period(db)
+#get_longest_streak_habit(db)
+#get_longest_streak_from_all(db)
+#actual_streak_today_single(db)
+list = ("stairs", "swimming")
+for i in list:
+    actual_streak_today_single(db, i)
