@@ -289,14 +289,19 @@ def overview_all_habits(db):
     Parameters:
         db - database
     Returns:
-        print of db-export row by row
+        print of db-export row by row for user
+        data as tuple for further functions in analysis 
     """
-    print("Overview all Habits: ")
     cur = db.cursor()
-    cur.execute("SELECT DISTINCT name, period FROM habits")
-    for row in cur:
-        print(row)
-
+    data = cur.execute("SELECT DISTINCT name, period FROM habits")
+    #for row in cur:
+        #print(row) 
+    data = [i[0] for i in data]
+    print("List of all habits: ",data)
+    print("------------------------------")
+    return data
+    
+    
 def overview_daily_habits(db):
     """
     select all habits from table "habits" of current database with period daily.
@@ -304,13 +309,14 @@ def overview_daily_habits(db):
         db - database
     Returns:
         print of db-export row by row
+        data as tuple for functions
     """
-    print("Overview all daily habits: ")
     period = "daily"
     cur = db.cursor()
-    cur.execute("SELECT DISTINCT name FROM habits WHERE period=?", (period,))
-    for row in cur:
-        print(row)
+    data = cur.execute("SELECT DISTINCT name FROM habits WHERE period=?", (period,))
+    data = [i[0] for i in data]
+    print("Overview all daily habits: ", data)
+    return data
 
 def overview_weekly_habits(db):
     """
@@ -320,12 +326,13 @@ def overview_weekly_habits(db):
     Returns:
         print of db-export
     """
-    print("Overview all weekly habits: ")
     period = "weekly"
     cur = db.cursor()
-    cur.execute("SELECT DISTINCT name FROM habits WHERE period=?", (period,))
-    for row in cur:
-        print(row)
+    data = cur.execute("SELECT DISTINCT name FROM habits WHERE period=?", (period,))
+    data = [i[0] for i in data]
+    print("Overview all weekly habits: ", data)
+    return data
+
 
 def habits_details(db):
     """
@@ -403,7 +410,6 @@ def streak_ongoing(db, name, period):
             now = datetime.now()
             now.replace(minute=0, hour=0, second=0, microsecond=0)
             print("Today is: ", now.date())
-            #print(now.date())
             difference_check = now - last_checkdate
             last_streak = get_last_streak(db, name)
             last_streak = str(last_streak)
@@ -483,25 +489,6 @@ def streakdata_single(db, name=None):
     print(df)
 
 
-
-def count_checks_total(db):
-    """
-    total number of checks per habit without duplicates
-    -----------------------------
-    Parameters:
-        db - database where table checks is 
-    Returns:
-        pandas dataframe with total number of checks per habit without duplicates; duplicate=two checks with same date
-    """
-    cur = db.cursor()
-    cur.execute("SELECT habit, period, checkdate, streak FROM checks")
-    df = pd.DataFrame(cur.fetchall(), columns = ["habit", "period", "last checkdate", "streak"])
-    df = df.drop_duplicates()
-    df = df["habit"].value_counts()
-    print("Total checks per habit (without duplicates): ")
-    print(df)
-
-
 def actual_streak_today_single(db, name=None):
     """
     calculates actual streakvalue from today, if there is no checkentry for current day in table
@@ -520,7 +507,7 @@ def actual_streak_today_single(db, name=None):
     period = period[2:-3]
     streak_ongoing(db, name, period)
 
-def fuelle_test_db():    
+def testdata_db():    
     db = get_db("test.db")
     create_tables(db)
     #add_habit(db, "jogging", "1x a week", "weekly", "2022-11-02")
@@ -555,9 +542,9 @@ def fuelle_test_db():
     #db.commit()
 
 
-db = get_db("test.db")
+#db = get_db("test.db")
 #create_tables(db)
-#fuelle_test_db()
+#testdata_db()
 #overview_all_habits(db)
 #add_habit(db, "swimming", "1x a week", "weekly", "2022-10-11")
 #add_check(db, "swimming", "weekly", "2022-11-17", "True")
@@ -574,6 +561,6 @@ db = get_db("test.db")
 #get_longest_streak_habit(db)
 #get_longest_streak_from_all(db)
 #actual_streak_today_single(db)
-list = ("stairs", "swimming")
-for i in list:
-    actual_streak_today_single(db, i)
+#list = ("stairs", "swimming")
+#for i in list:
+    #actual_streak_today_single(db, i)

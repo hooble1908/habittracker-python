@@ -6,7 +6,7 @@ Created on Mon Oct 17 10:56:58 2022
 """
 
 from db import get_db, add_habit, check_habit, delete_habit_data, create_tables, overview_all_habits
-from db import habits_details, get_check_data, overview_daily_habits, overview_weekly_habits, get_last_checkdate
+from db import habits_details, overview_daily_habits, overview_weekly_habits, get_last_checkdate
 from datetime import date, datetime, timedelta
 from habits import Habit
 import time

@@ -1,82 +1,114 @@
 #all functions regarding the analysepart of habits
-from db import get_last_checkdate, get_db, overview_all_habits, create_tables, add_habit, check_habit, delete_habit_data
+import pandas as pd
+from db import get_db, overview_daily_habits, overview_weekly_habits, overview_all_habits
+
 from datetime import datetime, timedelta, date
-from testing_stuff import fuelle_test
+from numpy import array
 from habits import Habit
 import time
 
-"""def streak_ongoing(db, name, period):
-    
-    Parameters:
-        db - name database checkinformation is stored
-        name - name of habit that is checked if streak is still actice
-    Returns
-    if the difference of last checkdate and todays check is within period than value "True" is added to checkentry, if not "False"
-    value used to calculate length of streak
-    
-    try:
-        last_checkdate = str(get_last_checkdate(db, name))
-        last_checkdate = last_checkdate[2:-3]
-        print(last_checkdate)
-        last_checkdate = datetime.strptime(last_checkdate, '%Y-%m-%d')
-        today = datetime.today()    
-        print("Today is: ")
-        print(today.date())
-        #print(today.isocalendar())
-        difference_check = today - last_checkdate
-        print(period + " difference is: " + str(difference_check.days))
-   
-        if period == "daily":
-            if difference_check <= timedelta(days=1):
-                streak = "True"
-            else:
-                streak = "False"
-            
-        elif period == "weekly":
-            if difference_check <= timedelta(weeks=1):
-                streak = "True"
-            else:
-                streak = "False"
-        else:
-            streak = "Invalid data"
-    
-        print(streak)
-        return streak
-    
-    except Exception as e:
-        print("Something went wrong while checking streakdata: ",e)
-        streak = "Invalid data"
-        """
-    
-def fuelle_test_db():    
-    db = get_db("test.db")
-    create_tables(db)
-    add_habit(db, "jogging", "2x a week", "weekly")
-    add_habit(db, "swimming", "1h", "weekly")
-    add_habit(db, "stairs", "no elevator at work", "daily")
-    add_habit(db, "cigarettes", "not even drunk", "daily")
-    add_habit(db, "vitamins", "drink or tablette", "daily")
-    add_habit(db, "no fastfood", "not at all", "weekly")
-    check_habit(db, "jogging", "weekly", "2022-11-01")
-    check_habit(db, "jogging", "weekly", "2022-11-02")
-    check_habit(db, "jogging", "weekly", "2022-11-05")
-    check_habit(db, "jogging", "weekly", "2022-11-13")
-    check_habit(db, "jogging", "weekly", "2022-11-15")
-    check_habit(db, "swimming", "weekly", "2022-11-03")
-    check_habit(db, "swimming", "weekly", "2022-11-13")
-    check_habit(db, "stairs", "daily", "2022-11-13")
-    check_habit(db, "stairs", "daily", "2022-11-14")
-    check_habit(db, "cigarettes", "daily", "2022-11-01")
-    check_habit(db, "cigarettes", "daily", "2022-11-02")
-    check_habit(db, "cigarettes", "daily", "2022-11-04")
-    check_habit(db, "vitamins", "daily", "2022-11-11")
-    check_habit(db, "vitamins", "daily", "2022-11-12")
-    check_habit(db, "vitamins", "daily", "2022-11-15")
-    check_habit(db, "no fastfood", "weekly", "2022-11-01")
-    check_habit(db, "no fastfood", "weekly", "2022-11-15")
-    db.commit()
+#db = get_db("test.db")
 
-db = get_db("test.db")
-fuelle_test(db)
-overview_all_habits(db)
-#streak_ongoing(db, "Singing", "weekly")
+def count_checks_total(db):
+    """
+    total number of checks per habit without duplicates
+    -----------------------------
+    Parameters:
+        db - database where table checks is 
+    Returns:
+        pandas dataframe with total number of checks per habit without duplicates; duplicate=two checks with same date
+    """
+    cur = db.cursor()
+    cur.execute("SELECT habit, period, checkdate, streak FROM checks")
+    df = pd.DataFrame(cur.fetchall(), columns = ["habit", "period", "last checkdate", "streak"])
+    df = df.drop_duplicates()
+    df = df["habit"].value_counts()
+    print("Total checks per habit (without duplicates): ")
+    print(df)
+
+
+def count_checks_single(db, name=None):
+    """
+    total number of checks for specific habit without duplicates, if habit not given user can enter
+    -----------------------------
+    Parameters:
+        db - database where table checks is 
+    Returns:
+        pandas dataframe with total number of checks per habit without duplicates; duplicate=two checks with same date
+    """
+    if not name:
+        name = input("checkdata for which habit?: ")
+    cur = db.cursor()
+    cur.execute("SELECT habit, period, checkdate, streak FROM checks WHERE habit=?", (name,))
+    df = pd.DataFrame(cur.fetchall(), columns = ["habit", "period", "last checkdate", "streak"])
+    df = df.drop_duplicates()
+    df = df["habit"].value_counts()
+    print("Total checks (without duplicates): ", df)
+    return df
+
+
+def checkrate_single(db, name=None):
+    """
+    number of checkdates to days/calendarweeks since creation of habit, depends on period of habit
+    Parameters:
+        db : name of database where checkinformation and habitinformation is
+        name : name of habit
+    Returns:
+    print with number checks and days/weeks since adding of the habit
+    """
+    if not name:
+        name = input("checkdata for which habit?: ")
+    checks = count_checks_single(db, name)
+    checks = int(checks)
+    cur = db.cursor()
+    addingdate = cur.execute("SELECT adding_date FROM habits WHERE name=?", (name,))
+    addingdate = str(cur.fetchone())
+    addingdate = addingdate[2:-3]
+    print("Addingdate for habit ", name, " was: ",addingdate)    
+    addingdate = datetime.strptime(addingdate, '%Y-%m-%d')
+    addingdate.replace(minute=0, hour=0, second=0, microsecond=0)
+    now = datetime.now()
+    now.replace(minute=0, hour=0, second=0, microsecond=0)
+    print("Today is: ", now.date())
+    period = cur.execute("""SELECT DISTINCT period FROM habits WHERE name=?""", (name,))
+    period = str(cur.fetchone())
+    period = period[2:-3]
+    
+    if period == "daily":
+        difference_check = now - addingdate
+        print("You have accomplished ",checks, " checks in the last ",difference_check.days, " days.")
+        print("---------------------------")
+        
+    elif period == "weekly":
+        difference_check = now.isocalendar().week - addingdate.isocalendar().week
+        print("You have accomplished ",checks, " checks in the last ",difference_check, " weeks.")
+        print("---------------------------")
+        
+    else:
+        print("Please check period. Invalid value!")
+
+    
+def checkrate_period(db, period=None):
+    """
+    number of checkdates to days/calendarweeks since creation of all habits of given period
+    Parameters:
+        db : name of database where checkinformation and habitinformation is
+        period : period of habits
+    Returns:
+    print with number checks and days/weeks since adding of habits of given period
+    """
+    if not period:
+        period = input("checkdata for which period?:")
+    
+    if period == "daily":
+        data = overview_daily_habits(db)
+        for i in data:
+            checkrate_single(db, i)
+    elif period == "weekly":
+        data = overview_weekly_habits(db)
+        for i in data:
+            checkrate_single(db, i)
+    else:
+        print("Please check period. Invalid value!")
+        
+

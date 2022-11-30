@@ -1,8 +1,5 @@
-import questionary as qs
 from db import get_db, create_tables, overview_all_habits, habits_details, check_habit
 from habits import Habit, create_habit, modify_habit, delete_habit
-#from analyse import overview
-from datetime import date
 
 def main_cli():
     """

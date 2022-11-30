@@ -1,4 +1,4 @@
-from db import get_db, add_habit, check_habit, delete_habit_data, create_tables, habits_details, overview_all_habits
+from db import get_db, add_habit, delete_habit_data, create_tables, habits_details, overview_all_habits, streak_ongoing
 from datetime import date
 
 
@@ -173,3 +173,30 @@ def delete_habit(db): #enter check if habit is existing
         print("Something went wrong while deleting: " + name, e)
         db.close()
 
+
+
+def check_habit(db, name, checkdate=None):
+    """
+    adds new checkentry to table checks with habitname, period, checkdate and if streak is ongoing or not
+    Parameters:
+        db - database where table is
+        name - name of habit added
+        checkdate - current day of checking
+    Returns:
+        print that check was added to table checks
+    """
+    try:
+        cur = db.cursor()
+        if not checkdate:
+            checkdate = date.today()
+        period = cur.execute("""SELECT DISTINCT period FROM habits WHERE name=?""", (name,))
+        period = str(cur.fetchone())
+        period = period[2:-3]    
+        streak = streak_ongoing(db, name, period)
+        cur.execute("""INSERT INTO checks (habit, period, checkdate, streak) VALUES (?,?,?, ?) """, (name, period, checkdate, streak))
+        db.commit()
+        print("Habit " + name + " was checked successfully.")
+    
+    except Exception as e:
+        print("Something went wrong while checking: " + name, e)
+        #close_db(db)
