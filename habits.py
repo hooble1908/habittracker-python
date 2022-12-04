@@ -1,4 +1,4 @@
-from db import get_db, add_habit, delete_habit_data, create_tables, habits_details, overview_all_habits, streak_ongoing
+from db import add_habit, habits_details, overview_all_habits, streak_ongoing, habit_details_single
 from datetime import date
 
 
@@ -14,14 +14,7 @@ class Habit:
     def show(self):
         print({self.name}, {self.description}, {self.period})
     
-    def add_streak(self):
-        self.streak = True
-    
-    
-    def reset_streak(self):
-        self.streak = False
-    
-    
+        
     def __str__(self):
         return "Habit {0}, Description {1}, Period {2}.".format(self.name, self.description, self.period)
     
@@ -45,21 +38,11 @@ class Habit:
             no return
         """
         checkdate = date.today()
-        streak = "False"
+        streak = "1"
         cur = db.cursor()
         cur.execute("""INSERT INTO checks (habit, period, checkdate, streak) VALUES (?,?,?, ?) """, (self.name, self.period, checkdate, streak))
         db.commit()
-        #check_habit(db, self.name, self.period)
         
-    #def delete_habit(self, db):
-        """
-        delete all entries from check table and habit table with object name
-        Parameters:
-            name of habit
-        Returns:
-            no return
-        """
-        #delete_habit_data(db, self)
         
     def add_habit(self, db):
         add_habit(db, self.name, self.description, self.period)
@@ -97,7 +80,10 @@ def create_habit(db):
     """
     try:
         print("Creating a new habit: ")
+        habitlist = overview_all_habits(db)
         name = input("Name of habit: ")
+        while name in habitlist:
+            name = input("habitname already in list. Please enter other habitname: ")
         description= input("Description: ")
         period = choose_period()
         habit = Habit(name, description, period)
@@ -109,14 +95,19 @@ def create_habit(db):
 
 def modify_habit(db): #enter check if name is existing habit
     print("Lets modify an existing habit: ")
-    habits_details(db)
+    data = overview_all_habits(db)
     name = input("Which habit do you want do change?: ")
+    while name not in data:
+        name = input("habitname NOT in list. Please enter correct habitname: ")
+    habit_details_single(db, name)
     choice = input("What do you want to change from " + name + "? name (n), description (d) or periodicity (p)?")
         
     
     if choice == "n":
         try:
-            new_name = input("Change " + name + "to: ")
+            new_name = input("Change " + name + " to: ")
+            while new_name in data:
+                new_name = input("habitname already in list. Please enter other habitname: ")
             cur = db.cursor()
             cur.execute("""UPDATE habits SET name = ? WHERE name = ?""", [new_name, name])
             db.commit()
@@ -153,7 +144,7 @@ def modify_habit(db): #enter check if name is existing habit
     else:
         print("no valid attribute entered")
 
-def delete_habit(db): #enter check if habit is existing
+def delete_habit(db): 
     overview_all_habits(db)
     name = input("Which habit do you want do delete?: ")
     try:
@@ -199,4 +190,4 @@ def check_habit(db, name, checkdate=None):
     
     except Exception as e:
         print("Something went wrong while checking: " + name, e)
-        #close_db(db)
+

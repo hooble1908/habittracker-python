@@ -4,24 +4,33 @@ import sqlite3
 from datetime import date, datetime, timedelta 
 import pandas as pd
 
+
 def get_db(name="main.db"):
     """
     create SQL Database for storing habit data and check data
     Parameter:
         name of database, if no name given than defaultvalue
     Returns:
-        db variable
+        db as variable for other functions
     """
     try:
         db = sqlite3.connect(name)
         print("Database " + name + " ready.")
         return db
-    except:
-        print("Creating Database failed!")
+    except Exception as e:
+        print("Connecting to Database failed!", e)
         close_db(db)
 
 
 def close_db(db):
+    """
+    close connection to SQL Database
+    Parameter:
+        db variable
+    Returns:
+        print that db connection is closed
+    """
+    print("database connection closed!")
     db.close()
 
 
@@ -62,7 +71,7 @@ def create_tables(db):
     
 def add_habit(db, name, description, period, adding_date=None):
     """
-    adds new habit to table habits with description and periodicity of habit
+    adds new habit to table habits with description and periodicity of habit, used for creating testdata
     Parameters:
         db - database where table is
         name - name of habit added
@@ -80,58 +89,31 @@ def add_habit(db, name, description, period, adding_date=None):
         add_check(db, name, period, adding_date)
         db.commit()
         print("Habit " + name + " was added to database.")
+        print("-----------------------------------------")
     
     except Exception as e:
         print("Something went wrong while adding a habit: ", e)
-        
+        print("-----------------------------------------")
 
 
 def add_check(db, name, period, checkdate=None, streak=1):
+    """
+    adds new check to table habits with habitname, period, checkdate and streakvalue, used for creating testdata
+    Parameters:
+        db - database where table is
+        name - name of habit added
+        period - intervall in which a habit must be checked to maintain the streak
+        checkdatedate - date habit was checked for testdata
+        streak - streakvalue for habit in regards of period
+    Returns:
+        print that check was added to table
+    """
+    
     if not checkdate:
         checkdate = date.today()
     cur = db.cursor()
     cur.execute("""INSERT INTO checks (habit, period, checkdate, streak) VALUES (?,?,?, ?) """, (name, period, checkdate, streak))
     db.commit()
-
-
-
-def get_all_checkdata_single(db, name=None):
-    """
-    get all entries from table checks with selected habitname
-    if no habitname is given user can choose which he wants to see
-    Parameter:
-        db - database where table "checks" is
-        name - name of habit
-    Returns:
-        all check entries from the selected habit name
-    """
-    cur = db.cursor()
-    if not name:
-        name = input("checkdata for which habit?: ")
-    #overview_all_habits(db)
-    cur.execute("SELECT * FROM checks WHERE habit=?", (name,))
-    print("CheckID, habit, period, checkdate")    
-    for row in cur:
-        print(row)
-    
-    return cur 
-        
-def get_all_checkdata_period(db, period=None):
-    """
-    get all checkdata for all habits with selected period "daily" or "weekly"
-    Parameter:
-        db - database where table "checks" is
-        period - "daily" or "weekly"
-    Returns:
-        all checkentries for habits of selected period row by row
-    """
-    if not period:
-        period = input("checkdata for which period? daily or weekly?: ")
-    cur = db.cursor()
-    cur.execute("SELECT habit, period, checkdate FROM checks WHERE period=?", (period,))
-    print("habit -- period -- checkdate")    
-    for row in cur:
-        print(row)        
 
      
 def get_last_checkdate(db, name=None):
@@ -155,94 +137,7 @@ def get_last_checkdate(db, name=None):
      
      except Exception as e:
          print("Something went wrong with checkdata from: " + name, e)
-
-
-def get_last_streak(db, name):
-    """
-    get last streak from table checks for selected habit
-    Parameter:
-        db - database where table "checks" is
-        name - name of habit
-    Returns:
-        last_streak: value for further functions
-    """
-    try:
-        cur = db.cursor()
-        last_streak = cur.execute("SELECT streak FROM checks WHERE habit=? ORDER BY checkID DESC LIMIT 1", (name,))
-        last_streak = cur.fetchone()
-        return last_streak
-    
-    except Exception as e:
-        print("Something went wrong with checkdata from: " + name, e)
-
-
-def get_longest_streak_habit(db, name=None):
-    """
-    get longest streakvalue from db for chosen habit, if no habitname given than user can entry
-    Parameters
-        db - database where table "checks" is
-        name : name of habit
-    Returns
-    print with name and longest streak value
-    longest_streak: value for further functions
-    """
-    if not name:
-        name = input("For which habit you want to see the longest streak?: ")
-        
-    try:
-        cur = db.cursor()
-        longest_streak = cur.execute("SELECT habit, streak FROM checks WHERE habit=? ORDER BY streak DESC LIMIT 1", (name,))
-        longest_streak = cur.fetchone()
-        print("Longest streak from habit " + name + " is: ", longest_streak)
-        return longest_streak
-    
-    except Exception as e:
-        print("Something went wrong with checkdata from: " + name, e)
-
-
-def get_longest_streak_period(db, period=None):
-    """
-    get longest streakvalue from db for chosen period, if no periodname given than user can entry
-    Parameters
-        db - database where table "checks" is
-        period : period of habits
-    Returns
-    print with name and longest streak value for given period
-    longest_streak: value for further functions
-    """
-    if not period:
-        period = input("For which period you want to see the longest streaks?: ")
-        
-    try:
-        cur = db.cursor()
-        longest_streak = cur.execute("SELECT habit, streak FROM checks WHERE period=? ORDER BY streak DESC LIMIT 1", (period,))
-        longest_streak = cur.fetchone()
-        print("Longest streak from period " +period + " is: ", longest_streak)
-        return longest_streak
-    
-    except Exception as e:
-        print("Something went wrong with checkdata from: " + period, e)
-
-
-def get_longest_streak_from_all(db):
-    """
-    get longest streakvalue from all habits from db
-    Parameters
-        db - database where table "checks" is
-    Returns
-    print with name and longest streak value from all habits
-    longest_streak: value for further functions
-    """        
-    try:
-        cur = db.cursor()
-        longest_streak = cur.execute("SELECT habit, streak FROM checks ORDER BY streak DESC LIMIT 1")
-        longest_streak = cur.fetchone()
-        print("Longest streak from all habits is: ", longest_streak)
-        return longest_streak
-    
-    except Exception as e:
-        print("Something went wrong with checkdata from: ", e)
-
+         print("-----------------------------------------")
 
 
 def get_last_checkdate_all(db):
@@ -258,10 +153,11 @@ def get_last_checkdate_all(db):
          cur.execute("SELECT DISTINCT habit, period, checkdate, streak FROM checks")
          df = pd.DataFrame(cur.fetchall(), columns = ['habit', 'period', 'last checkdate', 'last streak'])
          print(df.groupby(["period","habit",]).max())
+         print("---------------------------------")
      
      except Exception as e:
          print("Something went wrong with getting checkdata: ", e)    
-
+         
 
 def get_last_checkdate_period(db, period=None):
      """
@@ -290,12 +186,11 @@ def overview_all_habits(db):
         db - database
     Returns:
         print of db-export row by row for user
-        data as tuple for further functions in analysis 
+        first dataobject (habitname) as tuple for further functions in analysis 
     """
+    print("------------------------------------------")
     cur = db.cursor()
     data = cur.execute("SELECT DISTINCT name, period FROM habits")
-    #for row in cur:
-        #print(row) 
     data = [i[0] for i in data]
     print("List of all habits: ",data)
     print("------------------------------")
@@ -317,6 +212,8 @@ def overview_daily_habits(db):
     data = [i[0] for i in data]
     print("Overview all daily habits: ", data)
     return data
+    print("-----------------------------------------")
+    
 
 def overview_weekly_habits(db):
     """
@@ -332,6 +229,7 @@ def overview_weekly_habits(db):
     data = [i[0] for i in data]
     print("Overview all weekly habits: ", data)
     return data
+    print("-----------------------------------------")
 
 
 def habits_details(db):
@@ -342,13 +240,53 @@ def habits_details(db):
     Returns:
         print of db-export
     """
+    print("------------------------------------------------------------")
     print("Overview all Habits and their details. ")
     cur = db.cursor()
-    cur.execute("SELECT DISTINCT * FROM habits")
+    data = cur.execute("SELECT DISTINCT * FROM habits")
     print("habit, description, period, creationdate")
     for row in cur:
         print(row)
+    return data
+    print("---------------------------------------")        
 
+def habit_details_single(db, name=None):
+    """
+    select habits and their details from table "habits" from current database
+    Parameters:
+        db - database
+    Returns:
+        print of db-export
+    """
+    if not name:
+        name = input("for which habit you want to get all details?: ")
+    cur = db.cursor()
+    cur.execute("SELECT * FROM habits WHERE name=?", (name,))
+    print("habit, description, period, creationdate")
+    for row in cur:
+        print(row)   
+
+
+def habit_details_period(db, period=None):
+    """
+    select habits and their details from table "habits" from current database
+    Parameters:
+        db - database
+        period - habits of which period are chosen
+    Returns:
+        print of db-export
+    """
+    if not period:
+        period = input("for which period you want to get all details?: ")
+    cur = db.cursor()
+    cur.execute("SELECT * FROM habits WHERE period=?", (period,))
+    print("-------------------------------------------")
+    print("habit, description, period, creationdate")
+    for row in cur:
+        print(row)
+    print("---------------------------------")    
+        
+        
 def delete_habit_data(db, name):
     """
     deletes all entries from the selected habit from tables "habits" and "checks"
@@ -364,6 +302,7 @@ def delete_habit_data(db, name):
     db.commit()
     db.close()
     print("Habit" + name + "and its checks deleted successfully.")
+    print("--------------------------------------------------")
     
 def check_habit(db, name, checkdate=None):
     """
@@ -389,7 +328,7 @@ def check_habit(db, name, checkdate=None):
     
     except Exception as e:
         print("Something went wrong while checking: " + name, e)
-        #close_db(db)
+        print("-----------------------------------------")
 
 
 def streak_ongoing(db, name, period):
@@ -446,6 +385,7 @@ def streak_ongoing(db, name, period):
                     print("Streak for " + name + " continues.")
                 
                 elif difference_weekly == 0:
+                    print("already checked in current period")
                     print("Actual Streak is: ", streak)
                     print("Streak for " + name + " continues.")
                 
@@ -456,7 +396,6 @@ def streak_ongoing(db, name, period):
             else:
                 streak = 1
                 print("There is a problem with streakdata. Please check entry in db.")
-        
             return streak
         
         except Exception as e:
@@ -468,7 +407,7 @@ def streak_ongoing(db, name, period):
         print("Streakvalue 1 by default. Please check data in db." + e)
     
     finally:
-        print("-----------------------")
+        print("------------------------------------------")
         return streak
 
 
@@ -489,6 +428,25 @@ def streakdata_single(db, name=None):
     print(df)
 
 
+def get_last_streak(db, name):
+    """
+    get last streak from table checks for selected habit
+    Parameter:
+        db - database where table "checks" is
+        name - name of habit
+    Returns:
+        last_streak: value for further functions
+    """
+    try:
+        cur = db.cursor()
+        last_streak = cur.execute("SELECT streak FROM checks WHERE habit=? ORDER BY checkID DESC LIMIT 1", (name,))
+        last_streak = cur.fetchone()
+        return last_streak
+    
+    except Exception as e:
+        print("Something went wrong with checkdata from: " + name, e)
+    
+
 def actual_streak_today_single(db, name=None):
     """
     calculates actual streakvalue from today, if there is no checkentry for current day in table
@@ -507,60 +465,122 @@ def actual_streak_today_single(db, name=None):
     period = period[2:-3]
     streak_ongoing(db, name, period)
 
-def testdata_db():    
-    db = get_db("test.db")
-    create_tables(db)
-    #add_habit(db, "jogging", "1x a week", "weekly", "2022-11-02")
-    #add_habit(db, "swimming", "1x a week", "weekly", "2022-10-30")
-    add_habit(db, "stairs", "no elevator at work", "daily", "2022-10-30")
-    #add_habit(db, "cigarettes", "not even drunk", "daily", "2022-10-30")
-    #add_habit(db, "vitamins", "drink or tablette", "daily", "2022-11-14")
-    #add_habit(db, "no fastfood", "not at all", "weekly", "2022-10-30")
-    #check_habit(db, "jogging")
-    #check_habit(db, "jogging", "2022-11-02")
-    #check_habit(db, "jogging", "2022-11-05")
-    #check_habit(db, "jogging", "2022-11-13")
-    #check_habit(db, "jogging", "2022-11-15")
-    #check_habit(db, "swimming", "2022-11-03")
-    #check_habit(db, "swimming", "2022-11-13")
-    #check_habit(db, "stairs", "2022-11-13")
-    #check_habit(db, "stairs", "2022-11-14")
-    #check_habit(db, "cigarettes", "2022-11-01")
-    #check_habit(db, "cigarettes", "2022-11-02")
-    #check_habit(db, "cigarettes", "2022-11-04")
-    #check_habit(db, "vitamins")
-    #check_habit(db, "vitamins", "2022-11-12")
-    #check_habit(db, "vitamins", "2022-11-15")
-    #check_habit(db, "no fastfood", "2022-11-01")
-    #check_habit(db, "no fastfood", "2022-11-15")
-    #add_check(db, "swimming", "weekly", "2022-11-04", 2)
-    #add_check(db, "swimming", "weekly", "2022-11-09", 3)
-    add_check(db, "stairs", "daily", "2022-11-04", 1)
-    add_check(db, "stairs", "daily", "2022-11-08", 1)
-    add_check(db, "stairs", "daily", "2022-11-09", 2)
-    add_check(db, "stairs", "daily", "2022-11-19", 1)
-    #db.commit()
+
+def actual_streak_today_period(db, period=None):
+    """
+    calculates actual streakvalue from today, if there is no checkentry for current day in table
+    -----------------------------
+    Parameters:
+        db - database where table checks is 
+        name - name of habit, in not given than user can entry
+    Returns:
+        variable with actual streakvalue if there would be a checkentry for today
+    """   
+    if not period:
+        period = input("for which PERIOD you want to see the actual streak from view TODAY? (daily) or (weekly): ")
+    
+    if period == "daily":
+        data = overview_daily_habits(db)
+        for i in data:
+            streak_ongoing(db, i, period)
+    elif period == "weekly":
+        data = overview_weekly_habits(db)
+        for i in data:
+            streak_ongoing(db, i, period)
+    else:
+        print("Please check value for period. Invalid value!")
 
 
-#db = get_db("test.db")
-#create_tables(db)
-#testdata_db()
-#overview_all_habits(db)
-#add_habit(db, "swimming", "1x a week", "weekly", "2022-10-11")
-#add_check(db, "swimming", "weekly", "2022-11-17", "True")
-#add_check(db, "stairs", "daily", "2022-11-14", "True")
-#check_habit(db, "swimming")
-#db.commit()
-#get_check_data(db, "stairs")
-#get_all_checkdata_period(db)
-#get_last_checkdate_all(db)
-#streakdata_single(db)
-#get_last_streak(db, "swimming")
-#streak_ongoing(db, "stairs", "daily")
-#get_longest_streak_period(db)
-#get_longest_streak_habit(db)
-#get_longest_streak_from_all(db)
-#actual_streak_today_single(db)
-#list = ("stairs", "swimming")
-#for i in list:
-    #actual_streak_today_single(db, i)
+def testdata_db(db):
+    """
+    creates testdata in database for testingpurposes of functionality, analysis and errorhandling
+    -----------------------------
+    Parameters:
+        db - database where table checks is 
+    Returns:
+        print that data was created successfully or exception
+    """   
+    try:
+        add_habit(db, "jogging", "1x a week", "weekly", "2022-11-02")
+        add_habit(db, "swimming", "1x a week", "weekly", "2022-10-30")
+        add_habit(db, "stairs", "no elevator at home or work", "daily", "2022-10-30")
+        add_habit(db, "cigarettes", "not even drunk", "daily", "2022-11-07")
+        add_habit(db, "vitamins", "drink or tablette", "daily", "2022-11-04")
+        add_habit(db, "no fastfood", "no pizza, kebap or mcdo/bk", "weekly", "2022-10-31")
+        add_check(db, "jogging", "weekly", "2022-11-07", "2")
+        add_check(db, "jogging", "weekly", "2022-11-18", "3")
+        add_check(db, "jogging", "weekly", "2022-11-28", "1")
+        add_check(db, "jogging", "weekly", "2022-12-03", "1")
+        add_check(db, "swimming", "weekly", "2022-11-09", "1")
+        add_check(db, "swimming", "weekly", "2022-11-14", "2")
+        add_check(db, "swimming", "weekly", "2022-12-01", "1")
+        add_check(db, "stairs", "daily", "2022-10-31", "2")
+        add_check(db, "stairs", "daily", "2022-11-01", "3")
+        add_check(db, "stairs", "daily", "2022-11-01", "3")
+        add_check(db, "stairs", "daily", "2022-11-02", "4")
+        add_check(db, "stairs", "daily", "2022-11-03", "5")
+        add_check(db, "stairs", "daily", "2022-11-05", "1")
+        add_check(db, "stairs", "daily", "2022-11-08", "1")
+        add_check(db, "stairs", "daily", "2022-11-09", "2")
+        add_check(db, "stairs", "daily", "2022-11-10", "3")
+        add_check(db, "stairs", "daily", "2022-11-11", "4")
+        add_check(db, "stairs", "daily", "2022-11-12", "5")
+        add_check(db, "stairs", "daily", "2022-11-13", "6")
+        add_check(db, "stairs", "daily", "2022-11-24", "1")
+        add_check(db, "stairs", "daily", "2022-11-26", "1")
+        add_check(db, "stairs", "daily", "2022-11-30", "1")
+        add_check(db, "stairs", "daily", "2022-12-01", "2")
+        add_check(db, "stairs", "daily", "2022-12-02", "3")
+        add_check(db, "stairs", "daily", "2022-12-03", "4")
+        add_check(db, "cigarettes", "daily", "2022-11-08", "2")
+        add_check(db, "cigarettes", "daily", "2022-11-09", "3")
+        add_check(db, "cigarettes", "daily", "2022-11-11", "1")
+        add_check(db, "cigarettes", "daily", "2022-11-12", "2")
+        add_check(db, "cigarettes", "daily", "2022-11-13", "3")
+        add_check(db, "cigarettes", "daily", "2022-11-14", "4")
+        add_check(db, "cigarettes", "daily", "2022-11-15", "5")
+        add_check(db, "cigarettes", "daily", "2022-11-17", "1")
+        add_check(db, "cigarettes", "daily", "2022-11-18", "2")
+        add_check(db, "cigarettes", "daily", "2022-11-19", "3")
+        add_check(db, "cigarettes", "daily", "2022-11-20", "4")
+        add_check(db, "cigarettes", "daily", "2022-11-21", "5")
+        add_check(db, "cigarettes", "daily", "2022-11-22", "6")
+        add_check(db, "cigarettes", "daily", "2022-11-23", "7")
+        add_check(db, "cigarettes", "daily", "2022-11-24", "8")
+        add_check(db, "cigarettes", "daily", "2022-11-25", "9")
+        add_check(db, "cigarettes", "daily", "2022-11-26", "10")
+        add_check(db, "cigarettes", "daily", "2022-11-28", "1")
+        add_check(db, "cigarettes", "daily", "2022-11-29", "2")
+        add_check(db, "cigarettes", "daily", "2022-11-30", "3")
+        add_check(db, "cigarettes", "daily", "2022-12-01", "4")
+        add_check(db, "cigarettes", "daily", "2022-12-03", "1")
+        add_check(db, "vitamins", "daily", "2022-11-05", "2")
+        add_check(db, "vitamins", "daily", "2022-11-08", "1")
+        add_check(db, "vitamins", "daily", "2022-11-09", "2")
+        add_check(db, "vitamins", "daily", "2022-11-10", "3")
+        add_check(db, "vitamins", "daily", "2022-11-13", "1")
+        add_check(db, "vitamins", "daily", "2022-11-14", "2")
+        add_check(db, "vitamins", "daily", "2022-11-15", "3")
+        add_check(db, "vitamins", "daily", "2022-11-16", "4")
+        add_check(db, "vitamins", "daily", "2022-11-17", "5")
+        add_check(db, "vitamins", "daily", "2022-11-18", "6")
+        add_check(db, "vitamins", "daily", "2022-11-19", "7")
+        add_check(db, "vitamins", "daily", "2022-11-20", "8")
+        add_check(db, "vitamins", "daily", "2022-11-21", "9")
+        add_check(db, "vitamins", "daily", "2022-11-22", "10")
+        add_check(db, "vitamins", "daily", "2022-11-23", "11")
+        add_check(db, "vitamins", "daily", "2022-11-25", "1")
+        add_check(db, "vitamins", "daily", "2022-11-27", "1")
+        add_check(db, "vitamins", "daily", "2022-11-29", "1")
+        add_check(db, "vitamins", "daily", "2022-11-30", "2")
+        add_check(db, "vitamins", "daily", "2022-12-01", "3")
+        add_check(db, "vitamins", "daily", "2022-12-02", "4")
+        add_check(db, "no fastfood", "weekly", "2022-11-20", "1")
+        add_check(db, "no fastfood", "weekly", "2022-11-26", "2")  
+        print("Checkdata added to database.")
+        db.commit()
+        
+    
+    except Exception as e:
+       print("Something went wrong with implementing testdata: ", e)
+       close_db(db)
