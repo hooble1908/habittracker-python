@@ -7,7 +7,7 @@ import pandas as pd
 
 def get_db(name="main.db"):
     """
-    create SQL Database for storing habit data and check data
+    conncect to SQL Database for storing habit data and check data
     Parameter:
         name of database, if no name given than defaultvalue
     Returns:
@@ -83,13 +83,13 @@ def add_habit(db, name, description, period, adding_date=None):
     """
     try:
         cur = db.cursor()
-        if not adding_date:
+        if not adding_date: #default value is TODAY
             adding_date = str(date.today())
         cur.execute("""INSERT INTO habits (name, description, period, adding_date) VALUES (?,?,?,?) """, (name, description, period, adding_date))
         add_check(db, name, period, adding_date)
         db.commit()
         print("Habit " + name + " was added to database.")
-        print("-----------------------------------------")
+        print("-----------------------------------------") #just for better visuability in CLI
     
     except Exception as e:
         print("Something went wrong while adding a habit: ", e)
@@ -107,8 +107,7 @@ def add_check(db, name, period, checkdate=None, streak=1):
         streak - streakvalue for habit in regards of period
     Returns:
         print that check was added to table
-    """
-    
+    """    
     if not checkdate:
         checkdate = date.today()
     cur = db.cursor()
@@ -123,15 +122,16 @@ def get_last_checkdate(db, name=None):
          db - database where table "checks" is
          name - name of habit
      Returns:
-         last_checkdate for selected habit for further functions         
-         print with name of habit and last checkdate
+         last_checkdate for selected habit as data for further functions         
      """
      if not name:
+         data = overview_all_habits(db)
          name = input("for which habit you want to see last checkdate?: ")
-     
+         while name not in data: #to catch exception that user enters a NON-existing habit
+             name = input("habitname NOT in list. Please enter correct habitname: ")
      try:
          cur = db.cursor()
-         last_checkdate = cur.execute("SELECT MAX(checkdate) FROM checks WHERE habit=?", (name,))
+         last_checkdate = cur.execute("SELECT MAX(checkdate) FROM checks WHERE habit=?", (name,)) #highest value for date is last date
          last_checkdate = cur.fetchone()
          return last_checkdate
      
@@ -142,7 +142,7 @@ def get_last_checkdate(db, name=None):
 
 def get_last_checkdate_all(db):
      """
-     get last checkdate from every habit from table , with pandas dataframe
+     get last checkdate from every habit from table, with pandas dataframe
      Parameter:
          db - database where table "checks" is
      Returns:
@@ -152,7 +152,7 @@ def get_last_checkdate_all(db):
          cur = db.cursor()
          cur.execute("SELECT DISTINCT habit, period, checkdate, streak FROM checks")
          df = pd.DataFrame(cur.fetchall(), columns = ['habit', 'period', 'last checkdate', 'last streak'])
-         print(df.groupby(["period","habit",]).max())
+         print(df.groupby(["period","habit",]).max()) #other way to get highest value with pandas, highest ID means last entry
          print("---------------------------------")
      
      except Exception as e:
@@ -161,11 +161,11 @@ def get_last_checkdate_all(db):
 
 def get_last_checkdate_period(db, period=None):
      """
-     get last checkdate from every habit from table , with pandas dataframe
+     get last checkdate from every habit with specific period, with pandas dataframe
      Parameter:
          db - database where table "checks" is
      Returns:
-         pandas dataframe with habit, checkID, period and last checkdate
+         pandas dataframe with habit, period and last checkdate
      """
      if not period:
          period = input("for which period you want to get last checkdates?: ")
@@ -173,7 +173,7 @@ def get_last_checkdate_period(db, period=None):
          cur = db.cursor()
          cur.execute("SELECT DISTINCT habit, period, checkdate FROM checks WHERE period=?", (period,))
          df = pd.DataFrame(cur.fetchall(), columns = ['habit', 'period', 'last checkdate',])
-         print(df.groupby(["period","habit",]).max())
+         print(df.groupby(["period","habit",]).max()) #maximum from ID is latest entry
      
      except Exception as e:
          print("Something went wrong with getting checkdata: ", e) 
@@ -181,7 +181,7 @@ def get_last_checkdate_period(db, period=None):
 
 def overview_all_habits(db):
     """
-    select all names from table "habits" of current database.
+    select all names and their period from table "habits" of current database.
     Parameters:
         db - database
     Returns:
@@ -193,8 +193,8 @@ def overview_all_habits(db):
     data = cur.execute("SELECT DISTINCT name, period FROM habits")
     data = [i[0] for i in data]
     print("List of all habits: ",data)
-    print("------------------------------")
-    return data
+    print("------------------------------") #just for visuability in CLI
+    return data #for further use in functions
     
     
 def overview_daily_habits(db):
@@ -204,7 +204,7 @@ def overview_daily_habits(db):
         db - database
     Returns:
         print of db-export row by row
-        data as tuple for functions
+        habitnames as datatuple for use in other functions
     """
     period = "daily"
     cur = db.cursor()
@@ -222,6 +222,7 @@ def overview_weekly_habits(db):
         db - database
     Returns:
         print of db-export
+        habitnames as datatuple for use in other functions
     """
     period = "weekly"
     cur = db.cursor()
@@ -239,6 +240,7 @@ def habits_details(db):
         db - database
     Returns:
         print of db-export
+        exportdata as datatuple for use in other functions
     """
     print("------------------------------------------------------------")
     print("Overview all Habits and their details. ")
@@ -252,13 +254,13 @@ def habits_details(db):
 
 def habit_details_single(db, name=None):
     """
-    select habits and their details from table "habits" from current database
+    select specific habit and its details from table "habits" from current database
     Parameters:
         db - database
     Returns:
-        print of db-export
+        print of db-export in CLI
     """
-    if not name:
+    if not name: #if no name is given, but normally should from other calling function
         name = input("for which habit you want to get all details?: ")
     cur = db.cursor()
     cur.execute("SELECT * FROM habits WHERE name=?", (name,))
@@ -269,7 +271,7 @@ def habit_details_single(db, name=None):
 
 def habit_details_period(db, period=None):
     """
-    select habits and their details from table "habits" from current database
+    select habits and their details from table "habits" from current database for all habits of specific period
     Parameters:
         db - database
         period - habits of which period are chosen
@@ -280,16 +282,16 @@ def habit_details_period(db, period=None):
         period = input("for which period you want to get all details?: ")
     cur = db.cursor()
     cur.execute("SELECT * FROM habits WHERE period=?", (period,))
-    print("-------------------------------------------")
+    print("-------------------------------------------") # only for better visuability in CLI
     print("habit, description, period, creationdate")
     for row in cur:
         print(row)
-    print("---------------------------------")    
+    print("---------------------------------")   # only for better visuability in CLI 
         
         
 def delete_habit_data(db, name):
     """
-    deletes all entries from the selected habit from tables "habits" and "checks"
+    deletes all entries from selected habit from tables "habits" and "checks"
     Parameters:
         db - database
         name - name of habit which should be deleted
@@ -306,7 +308,7 @@ def delete_habit_data(db, name):
     
 def check_habit(db, name, checkdate=None):
     """
-    adds new checkentry to table checks with habitname, period, checkdate and if streak is ongoing or not
+    adds new checkentry to table "checks" with habitname, period, checkdate and value with current streak
     Parameters:
         db - database where table is
         name - name of habit added
@@ -316,11 +318,11 @@ def check_habit(db, name, checkdate=None):
     """
     try:
         cur = db.cursor()
-        if not checkdate:
+        if not checkdate: #define default if none is given
             checkdate = date.today()
         period = cur.execute("""SELECT DISTINCT period FROM habits WHERE name=?""", (name,))
         period = str(cur.fetchone())
-        period = period[2:-3]    
+        period = period[2:-3]    #prepare string so value for period is correct for input in function below
         streak = streak_ongoing(db, name, period)
         cur.execute("""INSERT INTO checks (habit, period, checkdate, streak) VALUES (?,?,?, ?) """, (name, period, checkdate, streak))
         db.commit()
@@ -333,9 +335,11 @@ def check_habit(db, name, checkdate=None):
 
 def streak_ongoing(db, name, period):
     """
+    calculates actual streakvalue for habit from last checkdate, last streakvalue and difference to today in regards of period
     Parameters:
         db - name database checkinformation is stored
-        name - name of habit that is checked if streak is still actice
+        name - name of habit that is checked if streak is still active
+        period - period of habit, needed to correctly calculate streak
     Returns:
     if the difference of last checkdate and todays check is within period than +1 to current streak value is added to checkentry, 
     if not within streakperiod than value for streak is 1
@@ -345,58 +349,58 @@ def streak_ongoing(db, name, period):
             last_checkdate = str(get_last_checkdate(db, name))
             last_checkdate = last_checkdate[2:-3]
             print("Last Checkdate for habit " + name + " was: ",last_checkdate)
-            last_checkdate = datetime.strptime(last_checkdate, '%Y-%m-%d')
+            last_checkdate = datetime.strptime(last_checkdate, '%Y-%m-%d') #change to datetimeobject so timedelta can be calculated
             now = datetime.now()
-            now.replace(minute=0, hour=0, second=0, microsecond=0)
+            now.replace(minute=0, hour=0, second=0, microsecond=0) #change timestamp so always calculate from same timepoint of day
             print("Today is: ", now.date())
-            difference_check = now - last_checkdate
+            difference_check = now - last_checkdate # calculate difference from two datetime objects
             last_streak = get_last_streak(db, name)
             last_streak = str(last_streak)
             last_streak = last_streak[1:-2]
-            streak = int(last_streak)
+            streak = int(last_streak) #convert to integer so we can calculate new streakvalue
             print("Last Streak: ", streak)
        
             if period == "daily":
-                print(period + " difference is: " + str(difference_check.days))
+                print(period + " difference is: " + str(difference_check.days)) #print with difference in days
                 
-                if difference_check <= timedelta(days=1):                    
+                if difference_check <= timedelta(days=1):   #if habit is checked multiple times on same day                 
                     print("already checked in current period")
                     print("Actual Streak is now: ", streak)
                     print("Streak for " + name + " continues.")
                 
-                elif difference_check <= timedelta(days=2):
+                elif difference_check <= timedelta(days=2): #correct timedelta, streakvalue +=1
                     streak += 1
                     print("Actual Streak is now: ", streak)
                     print("Streak for " + name + " continues.")
                 
-                else:
+                else: #streak broken, new begins
                     streak = 1
                     print("Actual Streak is now: ", streak)
                     print("New streak for " + name + " starts today. Keep going!")
                 
-            elif period == "weekly":
+            elif period == "weekly": #=calendarweek
                 
-                difference_weekly = now.isocalendar().week - last_checkdate.isocalendar().week
+                difference_weekly = now.isocalendar().week - last_checkdate.isocalendar().week #timedelta from two dates in calendarweeks - start new week is monday
                 print(period + " difference is: " + str(difference_weekly) + " calendarweeks.")
 
-                if difference_weekly == 1:
+                if difference_weekly == 1: #correct timedelta, current streak gets 1 more, other ways to check than days for learningpurposes only
                     streak += 1
                     print("Actual Streak is: ", streak)
                     print("Streak for " + name + " continues.")
                 
-                elif difference_weekly == 0:
+                elif difference_weekly == 0: #multiple checks in same calendarweek, to ashure no cheating in streakvalue
                     print("already checked in current period")
                     print("Actual Streak is: ", streak)
                     print("Streak for " + name + " continues.")
                 
-                else:
+                else: #streak broken, new begins
                     streak = 1
                     print("Actual Streak is: ", streak)
                     print("New streak for " + name + " starts today. Keep going!")
-            else:
+            else: #to catch logical errors, set value to 1 
                 streak = 1
                 print("There is a problem with streakdata. Please check entry in db.")
-            return streak
+            return streak #return new streakvalue for storing in database
         
         except Exception as e:
             print("Something went wrong while checking streakdata: ",e)
@@ -415,9 +419,9 @@ def streakdata_single(db, name=None):
     """
     Parameters:
         db - database where table checks is
-        name - optional, if not given user can choose which habit he wants to see streakinformation
+        name - optional, if not given user can choose which habit he wants to see streakinformation - normally value is given from other function
     Returns:
-        pandas dataframe with actual streak number and longest streak for chosen habit
+        pandas dataframe with all checkentries from specific habit without duplicates
     """
     cur = db.cursor()
     if not name:
@@ -438,7 +442,7 @@ def get_last_streak(db, name):
         last_streak: value for further functions
     """
     try:
-        cur = db.cursor()
+        cur = db.cursor() #no check if name is valid habit because check is implemented in chain before already
         last_streak = cur.execute("SELECT streak FROM checks WHERE habit=? ORDER BY checkID DESC LIMIT 1", (name,))
         last_streak = cur.fetchone()
         return last_streak
@@ -468,26 +472,26 @@ def actual_streak_today_single(db, name=None):
 
 def actual_streak_today_period(db, period=None):
     """
-    calculates actual streakvalue from today, if there is no checkentry for current day in table
+    calculates actual streakvalue from view = today, if there is no checkentry for current day in table
     -----------------------------
     Parameters:
         db - database where table checks is 
-        name - name of habit, in not given than user can entry
+        period - period of habits are analysed, if not given than user can entry
     Returns:
-        variable with actual streakvalue if there would be a checkentry for today
+        output of called function about actual streakvalue for each habit of period
     """   
     if not period:
-        period = input("for which PERIOD you want to see the actual streak from view TODAY? (daily) or (weekly): ")
+        period = input("for which PERIOD you want to see the actual streaks from view TODAY? (daily) or (weekly): ")
     
     if period == "daily":
         data = overview_daily_habits(db)
-        for i in data:
+        for i in data: #loop for every habit of choosen period
             streak_ongoing(db, i, period)
     elif period == "weekly":
         data = overview_weekly_habits(db)
-        for i in data:
+        for i in data: #loop for every habit of choosen period
             streak_ongoing(db, i, period)
-    else:
+    else: #logical exception for incorrect periodvalue
         print("Please check value for period. Invalid value!")
 
 
@@ -500,7 +504,7 @@ def testdata_db(db):
     Returns:
         print that data was created successfully or exception
     """   
-    try:
+    try: #for shure better way, but nooby :)
         add_habit(db, "jogging", "1x a week", "weekly", "2022-11-02")
         add_habit(db, "swimming", "1x a week", "weekly", "2022-10-30")
         add_habit(db, "stairs", "no elevator at home or work", "daily", "2022-10-30")

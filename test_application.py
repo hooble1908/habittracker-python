@@ -1,7 +1,7 @@
 # functions for testing the application
 
 from habits import Habit
-from db import get_db, add_habit, check_habit, create_tables, close_db, check_habit2
+from db import get_db, add_habit, check_habit, create_tables, close_db, check_habit2, testdata_db
 from analyse import count_checks, get_habit_data
 from datetime import date
 

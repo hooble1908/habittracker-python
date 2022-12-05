@@ -12,13 +12,13 @@ def main_cli():
     db = get_db() #"main.db" by default, can give other name for testpurposes
     create_tables(db)
     testdata = input("Want to create testdata in database? (y) for YES, (any key) for NO: ") 
-    if testdata == "y":
+    if testdata == "y": #of no measn user wants to start fresh or already data from last usage in db
        testdata_db(db) 
     
     stop = False
     
     while not stop:
-        
+    #main menu is while-loop aslong as variable "stop" is not TRUE, same for branch-menu-points    
         print("--------------------------------------------------------------------")
         choice = input("What do you want to do? \n Overview (1) \n Check Habit (2) \n Create Habit (3) \n" \
                        " Modify Habit (4) \n Delete Habit (5) \n Analysemodul (6) \n Exit (e): ")
@@ -153,10 +153,10 @@ def main_cli():
             if proceed == "e":
                 print("Bye")
                 print("XXXXXXXXXXXXXXX END OF APPLICATION   XXXXXXXXXXXXXXXXXXX")
-                db.commit()
+                db.commit() #safe changes and close database connection at end of application
                 db.close()
                 stop = True
-
+                    
 if __name__ == "main_cli":
     main_cli()
 
