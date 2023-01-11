@@ -65,18 +65,17 @@ last unittest on 2023-01-11
 -------------------------------------------------------------------
 first focus for tests is on choosing the correct value for period, 
 because most of following functions of application need correct values for period in correct spelling
-
 testcases: correct userinput for daily or weekly
 was not able to mock testing for invalid userentry,
 because test hangs in while loop of original function
-------------------------------------------------------------------
-second focus is on correct calculation of streakvalues:
 
+second focus is on correct calculation of streakvalues:
 testcases:
 checking habit so streak gets +1 for daily and weekly habit
 checking habit so streak gets set to 1 because outside of correct period
 checking habit twice on same day or within same calendarweek so streak stays at same value
 
+-------------------------------------------------------------------------
 IMPORTANT:
 Unfortunately I was not able to mock the builtin-function datetime.now() to a specific date, 
 so testing the calculation of correct streakvalues only work if the mock for "last_ckeckdate"
