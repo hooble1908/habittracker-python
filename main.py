@@ -1,7 +1,8 @@
 from db import get_db, create_tables, overview_all_habits, habits_details, check_habit, habit_details_single, \
-actual_streak_today_single, actual_streak_today_period, habit_details_period, get_last_checkdate_all, testdata_db
+actual_streak_today_single, actual_streak_today_period, habit_details_period, get_last_checkdate_all, defaultdata_db
 from habits import create_habit, modify_habit, delete_habit
-from analyse import checkrate_single, checkrate_period, get_all_checkdata_single, get_longest_streak_habit, get_longest_streak_period, get_longest_streak_from_all
+from analyse import checkrate_single, checkrate_period, get_all_checkdata_single, \
+get_longest_streak_habit, get_longest_streak_period, get_longest_streak_from_all
 
 def main_cli():
     """
@@ -13,7 +14,7 @@ def main_cli():
     create_tables(db)
     testdata = input("Want to create testdata in database? (y) for YES, (any key) for NO: ") 
     if testdata == "y": #of no measn user wants to start fresh or already data from last usage in db
-       testdata_db(db) 
+       defaultdata_db(db) 
     
     stop = False
     

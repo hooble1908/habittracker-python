@@ -216,4 +216,3 @@ def check_habit(db, name, checkdate=None):
     
     except Exception as e:
         print("Something went wrong while checking: " + name, e)
-

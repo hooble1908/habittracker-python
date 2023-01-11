@@ -13,23 +13,23 @@ menu with simple main- and subloops
 pip install -r requirements.txt
 ```
 contains required packages
-- sqlite3, datetime, pandas, numpy, pytest
+- sqlite3, datetime, pandas, numpy, pytest, pytest-mocker, unittest
 
 ## Usage
 
 Start
 
 ```shell
-python main.py
+start main.py
 ```
 
 and follow instructions in application menu.
 Control over user input via command line interface
 
-option to create testdata in database for tests of functionality
+option to create defaultdata in database for tests of functionality outside unittests
 
 two possible periods:
-- daily: for daily tasks or goals, daily means one calendarday (not24h)
+- daily: for daily tasks or goals, daily means one calendarday (not exactly 24h)
 - weekly: for tasks for a whole week or once a week - calendarweek, start Monday
 
 user can create new habits, change existing habits or delete habits with or without corresponding checkdata
@@ -57,11 +57,29 @@ view of main menu:
 
 
 
-## Tests
+## unittest
+implemented with pytest
+last unittest on 2023-01-11
+---0 tests failed, 8 passed---
 
-```shell
-pytest und beschreiben wie man den Test durchführt
-# open task:
-- pytest
-- installationguide
+-------------------------------------------------------------------
+first focus for tests is on choosing the correct value for period, 
+because most of following functions of application need correct values for period in correct spelling
 
+testcases: correct userinput for daily or weekly
+was not able to mock testing for invalid userentry,
+because test hangs in while loop of original function
+------------------------------------------------------------------
+second focus is on correct calculation of streakvalues:
+
+testcases:
+checking habit so streak gets +1 for daily and weekly habit
+checking habit so streak gets set to 1 because outside of correct period
+checking habit twice on same day or within same calendarweek so streak stays at same value
+
+IMPORTANT:
+Unfortunately I was not able to mock the builtin-function datetime.now() to a specific date, 
+so testing the calculation of correct streakvalues only work if the mock for "last_ckeckdate"
+is modified manually as commented in code. 
+---sorry for the inconvenience---
+-------------------------------------------------------------------------

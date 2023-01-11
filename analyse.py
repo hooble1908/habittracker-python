@@ -1,13 +1,7 @@
 #all functions regarding the analysepart of habits
 import pandas as pd
-from db import get_db, overview_daily_habits, overview_weekly_habits, overview_all_habits
-
-from datetime import datetime, timedelta, date
-from numpy import array
-from habits import Habit
-import time
-
-#db = get_db("test.db")
+from db import overview_daily_habits, overview_weekly_habits
+from datetime import datetime
 
 def count_checks_total(db):
     """
@@ -64,27 +58,27 @@ def checkrate_single(db, name=None):
     addingdate = str(cur.fetchone())
     addingdate = addingdate[2:-3]
     print("Addingdate for habit ", name, " was: ",addingdate)    
-    addingdate = datetime.strptime(addingdate, '%Y-%m-%d')
-    addingdate.replace(minute=0, hour=0, second=0, microsecond=0)
+    addingdate = datetime.strptime(addingdate, '%Y-%m-%d') #datetimeobject
+    addingdate.replace(minute=0, hour=0, second=0, microsecond=0) #set date to begin of day to work with calendarday
     now = datetime.now()
-    now.replace(minute=0, hour=0, second=0, microsecond=0)
+    now.replace(minute=0, hour=0, second=0, microsecond=0) #set date to begin so calculation is correct with calendarday
     print("Today is: ", now.date())
     period = cur.execute("""SELECT DISTINCT period FROM habits WHERE name=?""", (name,))
     period = str(cur.fetchone())
-    period = period[2:-3]
+    period = period[2:-3] #remove unnecessary strings from export
     
     if period == "daily":
         difference_check = now - addingdate
-        print("You have accomplished at habit ",checks.to_string(), " checks in the last ",difference_check.days, " days.")
+        print("You have accomplished at habit ",checks.to_string(), " checks in the last ",difference_check.days, " days.") #alternative way to convert to string in print
         print("---------------------------")
         
     elif period == "weekly":
-        difference_check = now.isocalendar().week - addingdate.isocalendar().week
+        difference_check = now.isocalendar().week - addingdate.isocalendar().week #datetime objects with calendarweek
         print("You have accomplished at habit ",checks.to_string(), " checks in the last ",difference_check, " weeks.")
         print("---------------------------")
         
     else:
-        print("Please check period. Invalid value!")
+        print("Please check period. Invalid value!") #if period is neither daily or weekly
 
     
 def checkrate_period(db, period=None):
@@ -101,7 +95,7 @@ def checkrate_period(db, period=None):
     
     if period == "daily":
         data = overview_daily_habits(db)
-        for i in data:
+        for i in data: #run function for every item of return
             checkrate_single(db, i)
     elif period == "weekly":
         data = overview_weekly_habits(db)
@@ -127,7 +121,7 @@ def get_all_checkdata_single(db, name=None):
     cur.execute("SELECT * FROM checks WHERE habit=?", (name,))
     print("CheckID, habit, period, checkdate")    
     for row in cur:
-        print(row)
+        print(row) #print export row by row
     print("------------------------------------------")
     return cur 
 
