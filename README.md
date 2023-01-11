@@ -78,7 +78,7 @@ checking habit twice on same day or within same calendarweek so streak stays at 
 ------------------------------------------------------------------------
 IMPORTANT:
 Unfortunately I was not able to mock the builtin-function datetime.now() to a specific date, 
-so testing the calculation of correct streakvalues only work if the mock for "last_ckeckdate"
+so testing the calculation of correct streakvalues only work if the mock for "last_checkdate"
 is modified manually as commented in code. 
+
 ---sorry for the inconvenience---
-------------------------------------------------------------------------
