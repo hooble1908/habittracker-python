@@ -75,10 +75,10 @@ checking habit so streak gets +1 for daily and weekly habit
 checking habit so streak gets set to 1 because outside of correct period
 checking habit twice on same day or within same calendarweek so streak stays at same value
 
--------------------------------------------------------------------------
+------------------------------------------------------------------------
 IMPORTANT:
 Unfortunately I was not able to mock the builtin-function datetime.now() to a specific date, 
 so testing the calculation of correct streakvalues only work if the mock for "last_ckeckdate"
 is modified manually as commented in code. 
 ---sorry for the inconvenience---
--------------------------------------------------------------------------
+------------------------------------------------------------------------
